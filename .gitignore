@@ -1,0 +1,17 @@
+# Build output
+out/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+
+# Go build
+tailscale/bin/
+tailscale/pkg/
+
+# Misc
+*.log
+*.tmp
