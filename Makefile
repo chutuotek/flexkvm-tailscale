@@ -70,7 +70,7 @@ install: build
 # Compress with upx
 	@echo ""
 	@echo "Compressing with upx..."
-	@which upx >/dev/null 2>&1 && upx --best $(OUTPUT_DIR)/tailscale $(OUTPUT_DIR)/tailscaled || echo "  upx not found, skipping compression"
+	@which upx >/dev/null 2>&1 && upx --best --lzma $(OUTPUT_DIR)/tailscale $(OUTPUT_DIR)/tailscaled || echo "  upx not found, skipping compression"
 
 	@echo ""
 	@echo "Installed files:"
