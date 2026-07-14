@@ -49,6 +49,19 @@ build: clone
 	@echo "Building tailscale..."
 	@mkdir -p $(PKG_BIN)
 
+	@# Apply patches (re-apply when patch count changes)
+	@EXPECTED=$$(ls $(CURDIR)/patch/*.patch 2>/dev/null | wc -l); \
+	CURRENT=$$(cat $(TAILSCALE_SRC)/.patched 2>/dev/null || echo 0); \
+	if [ "$$CURRENT" != "$$EXPECTED" ]; then \
+		echo "Patching: $$CURRENT -> $$EXPECTED patches"; \
+		git -C $(TAILSCALE_SRC) checkout -- . 2>/dev/null; \
+		for p in $(CURDIR)/patch/*.patch; do \
+			echo "Applying: $$$$(basename $$$$p)"; \
+			git -C $(TAILSCALE_SRC) apply --ignore-whitespace "$$$$p" || exit 1; \
+		done; \
+		echo "$$EXPECTED" > $(TAILSCALE_SRC)/.patched; \
+	fi
+
 	@( \
 		export CGO_ENABLED=1 && \
 		export GOOS=linux && \

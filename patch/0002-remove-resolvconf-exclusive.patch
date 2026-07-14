@@ -1,0 +1,13 @@
+diff --git a/net/dns/openresolv.go b/net/dns/openresolv.go
+index c9562b6a9..4ca0386b7 100644
+--- a/net/dns/openresolv.go
++++ b/net/dns/openresolv.go
+@@ -57,7 +57,7 @@ func (m openresolvManager) SetDNS(config OSConfig) error {
+ 	var stdin bytes.Buffer
+ 	writeResolvConf(&stdin, config.Nameservers, config.SearchDomains)
+ 
+-	cmd := exec.Command("resolvconf", "-m", "0", "-x", "-a", "tailscale")
++	cmd := exec.Command("resolvconf", "-m", "0", "-a", "tailscale")
+ 	cmd.Stdin = &stdin
+ 	out, err := cmd.CombinedOutput()
+ 	if err != nil {
