@@ -4,7 +4,8 @@ Tailscale VPN ARMv7 交叉编译
 
 ## 版本
 
-- Tailscale: v1.90.9
+- Tailscale: v1.100.0
+- Go: >= 1.26.4
 
 ## 编译
 

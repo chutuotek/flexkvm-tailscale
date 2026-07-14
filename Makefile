@@ -1,7 +1,7 @@
 #
 # Tailscale ARMv7 Cross-Compilation Makefile
 # Target Platform: RV1106 (arm-rockchip830-linux-uclibcgnueabihf)
-# Tag: v1.90.9
+# Tag: v1.100.0
 #
 
 SHELL:=/bin/bash
@@ -19,7 +19,7 @@ CROSS_CC := $(CROSS_COMPILE)gcc
 CROSS_CXX := $(CROSS_COMPILE)g++
 
 # Tailscale version
-TAILSCALE_TAG := v1.90.9
+TAILSCALE_TAG := v1.100.0
 TAILSCALE_SRC := $(CURDIR)/tailscale
 
 # Number of parallel jobs
@@ -43,7 +43,7 @@ info:
 clone:
 	@echo "Initializing/Updating tailscale submodule $(TAILSCALE_TAG)..."
 	@git submodule update --init --force tailscale
-	@cd $(TAILSCALE_SRC) && git checkout $(TAILSCALE_TAG) 2>/dev/null || true
+	@cd $(TAILSCALE_SRC) && git fetch --tags 2>/dev/null && git checkout $(TAILSCALE_TAG) 2>/dev/null || true
 
 build: clone
 	@echo "Building tailscale..."
@@ -56,13 +56,19 @@ build: clone
 		echo "Patching: $$CURRENT -> $$EXPECTED patches"; \
 		git -C $(TAILSCALE_SRC) checkout -- . 2>/dev/null; \
 		for p in $(CURDIR)/patch/*.patch; do \
-			echo "Applying: $$$$(basename $$$$p)"; \
-			git -C $(TAILSCALE_SRC) apply --ignore-whitespace "$$$$p" || exit 1; \
+			echo "Applying: $$(basename $$p)"; \
+			git -C $(TAILSCALE_SRC) apply --ignore-whitespace "$$p" || exit 1; \
 		done; \
 		echo "$$EXPECTED" > $(TAILSCALE_SRC)/.patched; \
 	fi
 
-	@( \
+	@# Step 1: detect feature tags and version (runs on host arch, NOT cross-compiled)
+	@echo "Detecting feature tags..."
+	@VERSION="1.100.0-1"; \
+	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=local go run ./cmd/featuretags --remove=bird,tap,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,routecheck,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,runtimemetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver); \
+	echo "Version: $$VERSION"; \
+	echo "Building with tags: $$TAGS"; \
+	( \
 		export CGO_ENABLED=1 && \
 		export GOOS=linux && \
 		export GOARCH=arm && \
@@ -70,11 +76,11 @@ build: clone
 		export CC=$(CROSS_CC) && \
 		export CXX=$(CROSS_CXX) && \
 		export CGO_LDFLAGS="-static" && \
+		export GOTOOLCHAIN=local && \
 		cd $(TAILSCALE_SRC) && \
-		TAGS=$$(./tool/go run ./cmd/featuretags --remove=bird,lazywg,tap,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop) && \
-		echo "Building with tags: $$TAGS" && \
-		go build -ldflags="-s -w -buildid=" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscale ./cmd/tailscale && \
-		go build -ldflags="-s -w -buildid=" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscaled ./cmd/tailscaled \
+		LDFLAGS="-s -w -buildid= -X tailscale.com/version.longStamp=$$VERSION -X tailscale.com/version.shortStamp=$$VERSION" && \
+		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscale ./cmd/tailscale && \
+		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscaled ./cmd/tailscaled \
 	)
 
 install: build
