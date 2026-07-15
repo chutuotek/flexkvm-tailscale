@@ -19,7 +19,7 @@ CROSS_CC := $(CROSS_COMPILE)gcc
 CROSS_CXX := $(CROSS_COMPILE)g++
 
 # Tailscale version
-TAILSCALE_TAG := v1.100.0
+TAILSCALE_TAG := v1.98.9
 TAILSCALE_SRC := $(CURDIR)/tailscale
 
 # Number of parallel jobs
@@ -65,8 +65,8 @@ build: clone
 
 	@# Step 1: detect feature tags and version (runs on host arch, NOT cross-compiled)
 	@echo "Detecting feature tags..."
-	@VERSION="1.100.0-1"; \
-	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=local go run ./cmd/featuretags --remove=bird,tap,dns,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,routecheck,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,runtimemetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver); \
+	@VERSION="1.98.9-1"; \
+	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=local go run ./cmd/featuretags --remove=bird,tap,dns,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver); \
 	echo "Version: $$VERSION"; \
 	echo "Building with tags: $$TAGS"; \
 	( \
