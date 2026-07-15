@@ -44,6 +44,7 @@ clone:
 	@echo "Initializing/Updating tailscale submodule $(TAILSCALE_TAG)..."
 	@git submodule update --init --force tailscale
 	@cd $(TAILSCALE_SRC) && git fetch --tags 2>/dev/null && git checkout $(TAILSCALE_TAG) 2>/dev/null || true
+	@rm -f $(TAILSCALE_SRC)/.patched
 
 build: clone
 	@echo "Building tailscale..."
@@ -65,7 +66,7 @@ build: clone
 	@# Step 1: detect feature tags and version (runs on host arch, NOT cross-compiled)
 	@echo "Detecting feature tags..."
 	@VERSION="1.100.0-1"; \
-	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=local go run ./cmd/featuretags --remove=bird,tap,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,routecheck,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,runtimemetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver); \
+	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=local go run ./cmd/featuretags --remove=bird,tap,dns,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,routecheck,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,runtimemetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver); \
 	echo "Version: $$VERSION"; \
 	echo "Building with tags: $$TAGS"; \
 	( \
