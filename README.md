@@ -4,8 +4,8 @@ Tailscale VPN ARMv7 交叉编译
 
 ## 版本
 
-- Tailscale: v1.100.0
-- Go: >= 1.26.4
+- Tailscale: v1.102.4
+- Go: >= 1.26.6（低于此版本时 Makefile 会通过 `GOTOOLCHAIN` 自动选用/下载对应工具链）
 
 ## 编译
 
