@@ -80,8 +80,8 @@ build: clone
 		export GOTOOLCHAIN=local && \
 		cd $(TAILSCALE_SRC) && \
 		LDFLAGS="-s -w -buildid= -X tailscale.com/version.longStamp=$$VERSION -X tailscale.com/version.shortStamp=$$VERSION" && \
-		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscale ./cmd/tailscale && \
-		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscaled ./cmd/tailscaled \
+		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='all=-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscale ./cmd/tailscale && \
+		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='all=-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscaled ./cmd/tailscaled \
 	)
 
 install: build
