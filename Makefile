@@ -70,7 +70,7 @@ build: clone
 
 	@# Step 1: detect feature tags and version (runs on host arch, NOT cross-compiled)
 	@echo "Detecting feature tags..."
-	@VERSION="1.102.4-1"; \
+	@VERSION="1.102.4"; \
 	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/featuretags --remove=bird,tap,dns,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver,remoteconfig); \
 	echo "Version: $$VERSION"; \
 	echo "Building with tags: $$TAGS"; \
