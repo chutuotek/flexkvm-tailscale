@@ -48,7 +48,15 @@ info:
 clone:
 	@echo "Initializing/Updating tailscale submodule $(TAILSCALE_TAG)..."
 	@git submodule update --init --force tailscale
-	@cd $(TAILSCALE_SRC) && git fetch --tags 2>/dev/null && git checkout $(TAILSCALE_TAG) 2>/dev/null || true
+	@# 注意：不能写成 `git fetch && git checkout TAG || true`。
+	@# 离线时 fetch 失败会让 && 短路、checkout 根本不执行，而 || true 又
+	@# 吞掉错误 —— 结果是拿旧源码编出二进制，却按新 tag 注入版本号
+	@# （曾因此把 v1.102.4 的源码标成 1.104.2）。fetch 失败只告警，
+	@# checkout 失败必须硬失败。
+	@cd $(TAILSCALE_SRC) && { git fetch --tags --quiet 2>/dev/null || \
+		echo "warning: git fetch 失败（离线？），改用本地已有 tag"; } && \
+		git checkout -q $(TAILSCALE_TAG) || \
+		{ echo "错误：无法切到 $(TAILSCALE_TAG)，请先 git submodule update --init --force tailscale"; exit 1; }
 	@rm -f $(TAILSCALE_SRC)/.patched
 
 build: clone
