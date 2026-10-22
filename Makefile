@@ -30,9 +30,30 @@ GO_TOOLCHAIN ?= auto
 # Number of parallel jobs
 JOBS ?= $(shell nproc)
 
-.PHONY: all clean clone info help
+# ---- C 控制台（替代官方 tailscale CLI）----
+#
+# 官方 `tailscale` 是独立二进制（cmd/tailscale），所以能真正从产物里去掉，
+# 省 2.4 MB（UPX 后）。改由 cli/tailscale-cli.c 提供：
+#   13 个子命令（up/down/status/ip/login/logout/set/get/ping/whois/
+#   whoami/netcheck/version），全部走 tailscaled 的 LocalAPI，
+#   **不 popen** 任何东西。
+#
+# 未覆盖的是数据面工具（ssh/nc）与桌面便利命令（completion/licenses/
+# bugreport/metrics/service 等）——它们对 IP-KVM 场景无价值，且 ssh 要引
+# 完整 SSH 客户端。详见 cli/tailscale-cli.c 文件头。
+CLI_ENABLE ?= 1
+LIB_DIR    := $(CURDIR)/../lib
+LIB_A      := $(LIB_DIR)/out/libvpnctl.a
+CLI_BIN    := $(OUTPUT_DIR)/tailscale
+CLI_SRC    := $(CURDIR)/cli/tailscale-cli.c
+CLI_CFLAGS := -std=c17 -O2 -Wall -Wextra
+# ping/netcheck 用到 OpenSSL（测 DERP 延迟）与 jansson
+CLI_LDLIBS := -ljansson -lssl -lcrypto
+TS_SYSROOT ?= $(shell ls -d /root/rv1106/flexkvm_sdk/sysdrv/source/buildroot/buildroot-*/output/host/arm-buildroot-linux-uclibcgnueabihf/sysroot 2>/dev/null | head -1)
 
-all: info clone build install
+.PHONY: all clean clone info help cli lib
+
+all: info clone build cli install
 	@echo "Build $(PKG_NAME) done"
 
 info:
@@ -93,17 +114,34 @@ build: clone
 		export GOTOOLCHAIN=$(GO_TOOLCHAIN) && \
 		cd $(TAILSCALE_SRC) && \
 		LDFLAGS="-s -w -buildid= -X tailscale.com/version.longStamp=$$VERSION -X tailscale.com/version.shortStamp=$$VERSION" && \
-		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='all=-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscale ./cmd/tailscale && \
 		go build -ldflags="$$LDFLAGS" -trimpath -gcflags='all=-l' -asmflags='-trimpath' -tags "$$TAGS" -o $(CURDIR)/$(PKG_BIN)/tailscaled ./cmd/tailscaled \
 	)
 
-install: build
+lib:
+	@$(MAKE) -C $(LIB_DIR)
+
+cli: lib
+	@echo "Building C console (tailscale)..."
+	@mkdir -p $(OUTPUT_DIR)
+	@$(CROSS_CC) $(CLI_CFLAGS) \
+		$(if $(TS_SYSROOT),--sysroot=$(TS_SYSROOT) -I$(TS_SYSROOT)/usr/include) \
+		-I$(LIB_DIR)/include \
+		$(CLI_SRC) $(LIB_A) \
+		$(if $(TS_SYSROOT),-L$(TS_SYSROOT)/usr/lib) \
+		$(CLI_LDLIBS) -o $(CLI_BIN)
+	@echo "  -> $(CLI_BIN)"
+
+install: build cli
 	@echo "Binaries ready in $(OUTPUT_DIR)/"
 
 # Compress with upx
 	@echo ""
 	@echo "Compressing with upx..."
-	@which upx >/dev/null 2>&1 && upx --best --lzma $(OUTPUT_DIR)/tailscale $(OUTPUT_DIR)/tailscaled || echo "  upx not found, skipping compression"
+	@which upx >/dev/null 2>&1 && upx --best --lzma $(OUTPUT_DIR)/tailscaled || echo "  upx not found, skipping compression"
+	@# C 控制台只 strip 不 UPX（UPX 会把代码段变私有脏页，netbird 上实测多占 7.2 MB）
+	@test -f $(CLI_BIN) && { which $(CROSS_COMPILE)strip >/dev/null 2>&1 && $(CROSS_COMPILE)strip $(CLI_BIN) || true; } || true
+	@# 注意：C 控制台现在就叫 tailscale（与官方同名），这里**不能**再 rm 它。
+	@# 官方 CLI 已从 build 目标移除，不会有同名文件被误打包。
 
 	@echo ""
 	@echo "Installed files:"
