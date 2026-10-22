@@ -1,7 +1,7 @@
 #
 # Tailscale ARMv7 Cross-Compilation Makefile
 # Target Platform: RV1106 (arm-rockchip830-linux-uclibcgnueabihf)
-# Tag: v1.102.4
+# Tag: v1.104.2
 #
 
 SHELL:=/bin/bash
@@ -19,12 +19,12 @@ CROSS_CC := $(CROSS_COMPILE)gcc
 CROSS_CXX := $(CROSS_COMPILE)g++
 
 # Tailscale version
-TAILSCALE_TAG := v1.102.4
+TAILSCALE_TAG := v1.104.2
 TAILSCALE_SRC := $(CURDIR)/tailscale
 
-# Go toolchain: v1.102.4 的 go.mod 要求 go >= 1.26.6，主机 go 更旧时
+# Go toolchain: go.mod 要求 go >= 1.27.3，主机 go 更旧时
 # 必须让 go 自行选用/下载对应工具链（local 会直接报错）。
-# 需要完全离线或固定版本时：make GO_TOOLCHAIN=go1.26.7
+# 需要完全离线或固定版本时：make GO_TOOLCHAIN=go1.27.3
 GO_TOOLCHAIN ?= auto
 
 # Number of parallel jobs
@@ -78,7 +78,7 @@ build: clone
 
 	@# Step 1: detect feature tags and version (runs on host arch, NOT cross-compiled)
 	@echo "Detecting feature tags..."
-	@VERSION="1.102.4"; \
+	@VERSION="$$(echo $(TAILSCALE_TAG) | sed 's/^v//')"; \
 	TAGS=$$(cd $(TAILSCALE_SRC) && GOTOOLCHAIN=$(GO_TOOLCHAIN) go run ./cmd/featuretags --remove=bird,tap,dns,resolved,aws,kube,synology,appconnectors,dbus,networkmanager,syspolicy,desktop_sessions,systray,captiveportal,sdnotify,wakeonlan,clientupdate,ssh,tpm,linkspeed,webclient,drive,taildrop,serve,tailnetlock,tundevstats,netlog,clientmetrics,usermetrics,capture,advertiseexitnode,useexitnode,advertiseroutes,acme,ace,posture,outboundproxy,conn25,c2n,cloud,doctor,identityfederation,linuxdnsfight,qrcodes,useproxy,webbrowser,debugeventbus,debugportmapper,relayserver,remoteconfig); \
 	echo "Version: $$VERSION"; \
 	echo "Building with tags: $$TAGS"; \
