@@ -213,12 +213,13 @@ static int cmd_ip(int argc, char **argv) {
 }
 
 static int cmd_version(void) {
-    vpnctl_table_t t;
-    static const char *titles[] = {"key", "value"};
     /* tailscaled 的 LocalAPI 根路径回的是纯文本版本串 */
     vpnctl_http_opts_t opts;
     vpnctl_http_resp_t resp;
-    char ver[128] = "unknown";
+    /* 初值必须是空串而不是 "unknown"：flexkvm-app 的模块把本命令的首行
+     * 当版本号缓存，非空假值会被当成真实版本（"vunknown"）。取不到就留空，
+     * 由上层按"版本未知"处理。 */
+    char ver[128] = "";
     int ret;
 
     memset(&opts, 0, sizeof(opts));
@@ -253,14 +254,17 @@ static int cmd_version(void) {
         return 0;
     }
 
-    {
-        const char *row[] = {"version", ver};
-
-        vpnctl_set_no_trunc(true);
-        vpnctl_table_init(&t, titles, 2);
-        vpnctl_table_row(&t, row);
-        vpnctl_table_finish(&t);
-    }
+    /*
+     * 非 JSON 模式输出**纯版本号**，与官方 `tailscale version` 对齐。
+     *
+     * 为什么必须是纯文本：flexkvm-app 的 tailscale 模块用
+     *   popen("<bin> version") 取**首行**当版本号
+     * （见 tailscale.c 的 tailscale_get_version）。早先这里用了表格渲染，
+     * 首行变成 "| key     | value   |"，于是前端把表头当成版本号显示成
+     * "v| key | value |"。官方 CLI 的输出是多行纯文本
+     * （第一行版本号，后续是 commit 等），只取首行正是它的用法。
+     */
+    printf("%s\n", ver);
     return 0;
 }
 
